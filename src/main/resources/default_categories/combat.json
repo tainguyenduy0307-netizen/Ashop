@@ -1,0 +1,7 @@
+{
+  "id": "combat",
+  "displayName": "Combat",
+  "title": "Combat Page %page%/%maxPage%",
+  "icon": "minecraft:iron_sword",
+  "items": []
+}

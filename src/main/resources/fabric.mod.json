@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "adminshop",
+	"version": "${version}",
+	"name": "AdminShop",
+	"description": "Server-side admin shop for Cobblemon servers.",
+	"authors": [
+		"tai"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/adminshop/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.tai.adminshop.AdminShopMod"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"fabric-api": "*",
+		"minecraft": "1.21.1",
+		"java": ">=21",
+		"cobblemon-economy": "*"
+	}
+}

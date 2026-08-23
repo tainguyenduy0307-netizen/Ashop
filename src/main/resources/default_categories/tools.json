@@ -1,0 +1,7 @@
+{
+  "id": "tools",
+  "displayName": "Tools",
+  "title": "Tools Page %page%/%maxPage%",
+  "icon": "minecraft:iron_pickaxe",
+  "items": []
+}

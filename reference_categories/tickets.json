@@ -1,0 +1,29 @@
+{
+  "id": "tickets",
+  "displayName": "Tickets",
+  "title": "Tickets Page %page%/%maxPage%",
+  "size": 54,
+  "icon": "minecraft:tripwire_hook",
+  "fillItem": "minecraft:gray_stained_glass_pane",
+  "buttons": {
+    "previousPage": 45,
+    "back": 49,
+    "nextPage": 53
+  },
+  "items": [
+    {
+      "id": "ticket1",
+      "material": "pokecrate:crate_ticket",
+      "quantity": 1,
+      "slot": 10,
+      "page": 1,
+      "category": "tickets",
+      "buyPrice": 50000,
+      "sellPrice": 0,
+      "dynamicPricing": false,
+      "minMultiplier": 1.0,
+      "maxMultiplier": 1.0,
+      "itemData": "{components:{\"minecraft:custom_data\":{crateName:\"Vip\"},\"minecraft:custom_name\":\u0027\"Vip Crate Ticket\"\u0027},count:1,id:\"pokecrate:crate_ticket\"}"
+    }
+  ]
+}

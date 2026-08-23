@@ -1,0 +1,10 @@
+.gradle/
+build/
+out/
+run/
+logs/
+crash-reports/
+.idea/
+*.iml
+archive-2026-06-06T051746Z.tar.gz
+shopp.zip

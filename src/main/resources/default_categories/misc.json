@@ -1,0 +1,14 @@
+{
+  "id": "misc",
+  "displayName": "Misc",
+  "title": "Misc Page %page%/%maxPage%",
+  "size": 54,
+  "icon": "minecraft:barrel",
+  "fillItem": "minecraft:gray_stained_glass_pane",
+  "buttons": {
+    "previousPage": 45,
+    "back": 49,
+    "nextPage": 53
+  },
+  "items": []
+}
