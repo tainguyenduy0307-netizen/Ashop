@@ -3,6 +3,7 @@ package com.tai.adminshop.service;
 import com.tai.adminshop.AdminShopMod;
 import com.tai.adminshop.config.StoreEntry;
 import com.tai.adminshop.economy.Currency;
+import com.tai.adminshop.economy.PaymentPolicy;
 import com.tai.adminshop.util.ItemStackSerializer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
@@ -35,29 +36,26 @@ public final class StoreService {
                 return false;
             }
         }
-        if (!Currency.has(player, entry.currency, entry.price)) {
-            player.sendMessage(Text.literal("Not enough " + Currency.normalize(entry.currency) + "."), false);
-            return false;
-        }
-        if (!Currency.take(player, entry.currency, entry.price)) {
-            player.sendMessage(Text.literal("Could not take " + Currency.normalize(entry.currency) + "."), false);
+        PaymentPolicy.Result payment = PaymentPolicy.charge(player, entry.currency, entry.price);
+        if (!payment.successful()) {
+            player.sendMessage(Text.literal(payment.message()), false);
             return false;
         }
         if (entry.giveItem) {
             ItemStack stack = itemFor(player, entry);
             if (stack.isEmpty()) {
-                Currency.give(player, entry.currency, entry.price);
+                PaymentPolicy.refund(player, payment.receipt());
                 player.sendMessage(Text.literal("Store item data is invalid: " + entry.id), false);
                 return false;
             }
             if (!player.getInventory().insertStack(stack.copy())) {
-                Currency.give(player, entry.currency, entry.price);
+                PaymentPolicy.refund(player, payment.receipt());
                 player.sendMessage(Text.literal("Your inventory is full."), false);
                 return false;
             }
         }
 
-        if (rankPurchase != null && !promoteRank(player, entry, rankPurchase)) {
+        if (rankPurchase != null && !promoteRank(player, entry, rankPurchase, payment.receipt())) {
             return false;
         }
         if (rankPurchase == null) {
@@ -143,26 +141,26 @@ public final class StoreService {
         }
     }
 
-    private static boolean promoteRank(ServerPlayerEntity player, StoreEntry entry, RankPurchase rankPurchase) {
+    private static boolean promoteRank(ServerPlayerEntity player, StoreEntry entry, RankPurchase rankPurchase, com.tai.adminshop.economy.PaymentReceipt receipt) {
         try {
             PromotionResult result = rankPurchase.track().promote(rankPurchase.user(), ImmutableContextSet.empty());
             if (!result.wasSuccessful()) {
-                Currency.give(player, entry.currency, entry.price);
-                player.sendMessage(Text.literal("Could not promote your rank. Gems were refunded."), false);
+                PaymentPolicy.refund(player, receipt);
+                player.sendMessage(Text.literal("Could not promote your rank. Payment was refunded."), false);
                 return false;
             }
             String promotedTo = normalizeGroup(result.getGroupTo().orElse(""));
             if (!rankPurchase.nextGroup().equals(promotedTo)) {
-                Currency.give(player, entry.currency, entry.price);
-                player.sendMessage(Text.literal("Promotion did not match this store item. Gems were refunded."), false);
+                PaymentPolicy.refund(player, receipt);
+                player.sendMessage(Text.literal("Promotion did not match this store item. Payment was refunded."), false);
                 return false;
             }
             rankPurchase.luckPerms().getUserManager().saveUser(rankPurchase.user()).join();
             return true;
         } catch (RuntimeException | LinkageError e) {
-            Currency.give(player, entry.currency, entry.price);
+            PaymentPolicy.refund(player, receipt);
             AdminShopMod.LOGGER.warn("LuckPerms rank promotion failed for {}", player.getGameProfile().getName(), e);
-            player.sendMessage(Text.literal("Could not promote your rank. Gems were refunded."), false);
+            player.sendMessage(Text.literal("Could not promote your rank. Payment was refunded."), false);
             return false;
         }
     }

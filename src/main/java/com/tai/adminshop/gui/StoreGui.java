@@ -46,7 +46,7 @@ public final class StoreGui {
 
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, playerInventory, playerEntity) -> StoreScreenHandler.create(syncId, playerInventory, inventory, rows, entriesBySlot),
-                Text.literal(config.title == null ? "Gem Store" : config.title)
+                Text.literal(config.title == null ? "Ruby Store" : config.title)
         ));
     }
 
@@ -69,6 +69,9 @@ public final class StoreGui {
         lore.add(Text.literal(""));
         lore.add(Text.literal("Price: ").formatted(Formatting.WHITE)
                 .append(Text.literal(Currency.format(entry.currency, entry.price)).formatted(Formatting.GREEN)));
+        if (Currency.SAPPHIRE.equals(Currency.normalize(entry.currency))) {
+            lore.add(Text.literal("Ruby may cover missing Sapphire").formatted(Formatting.GRAY));
+        }
         if (entry.requiredGroup != null && !entry.requiredGroup.isBlank()) {
             lore.add(Text.literal("Requires: " + entry.requiredGroup).formatted(Formatting.YELLOW));
         }

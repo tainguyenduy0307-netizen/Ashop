@@ -25,6 +25,10 @@ public class ShopEntry {
     public String purchaseLimitLabel;
     public String rewardType = "ITEM";
     public String rewardCommand;
+	public String boosterId;
+	public String paymentMode = "DEFAULT";
+    /** Curated policy marker: special item is buy-only and must not use dynamic pricing. */
+    public boolean shopOnly;
 
     public ShopEntry() {
     }
@@ -58,4 +62,5 @@ public class ShopEntry {
     public boolean isCommandReward() {
         return "COMMAND".equalsIgnoreCase(rewardType);
     }
+	public boolean isBoosterReward() { return "BOOSTER".equalsIgnoreCase(rewardType); }
 }

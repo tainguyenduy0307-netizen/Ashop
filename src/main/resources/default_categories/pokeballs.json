@@ -1,0 +1,9 @@
+{"id":"pokeballs","displayName":"Poké Balls","title":"Poké Balls Page %page%/%maxPage%","icon":"cobblemon:poke_ball","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:poke_ball","material":"cobblemon:poke_ball","category":"pokeballs","buyPrice":250,"sellPrice":50,"currency":"money","slot":10},
+{"id":"cobblemon:great_ball","material":"cobblemon:great_ball","category":"pokeballs","buyPrice":600,"sellPrice":120,"currency":"money","slot":11},
+{"id":"cobblemon:ultra_ball","material":"cobblemon:ultra_ball","category":"pokeballs","buyPrice":1400,"sellPrice":280,"currency":"money","slot":12},
+{"id":"cobblemon:quick_ball","material":"cobblemon:quick_ball","category":"pokeballs","buyPrice":2400,"sellPrice":0,"currency":"money","slot":13},
+{"id":"cobblemon:dusk_ball","material":"cobblemon:dusk_ball","category":"pokeballs","buyPrice":2400,"sellPrice":0,"currency":"money","slot":14},
+{"id":"cobblemon:timer_ball","material":"cobblemon:timer_ball","category":"pokeballs","buyPrice":2200,"sellPrice":0,"currency":"money","slot":15},
+{"id":"cobblemon:luxury_ball","material":"cobblemon:luxury_ball","category":"pokeballs","buyPrice":3000,"sellPrice":0,"currency":"money","slot":16},
+{"id":"cobblemon:master_ball","material":"cobblemon:master_ball","category":"pokeballs","buyPrice":500,"sellPrice":0,"currency":"sapphire","dynamicPricing":false,"shopOnly":true,"purchaseLimitEnabled":true,"purchaseLimit":1,"purchaseLimitPeriod":"MONTHLY","purchaseLimitLabel":"1 per month","slot":19}]}

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.tai.adminshop.AdminShopMod;
 import com.tai.adminshop.economy.Currency;
+import com.tai.adminshop.economy.UnovaCoreEconomyBridge;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -59,6 +60,19 @@ public class StoreManager {
         return config;
     }
 
+    public synchronized java.util.List<String> validateEconomy() {
+        java.util.List<String> issues = new java.util.ArrayList<>();
+        for (StoreEntry entry : config.items == null ? java.util.List.<StoreEntry>of() : config.items) {
+            String currency = Currency.normalize(entry.currency);
+            if (currency.isEmpty()) { issues.add("store/" + entry.id + " has unknown currency: " + entry.currency); continue; }
+            if (!Double.isFinite(entry.price) || entry.price < 0) issues.add("store/" + entry.id + " has invalid price");
+            if (!Currency.MONEY.equals(currency) && entry.price != Math.rint(entry.price)) issues.add("store/" + entry.id + " has fractional " + currency + " price");
+            if ((Currency.SAPPHIRE.equals(currency) || Currency.RUBY.equals(currency)) && !UnovaCoreEconomyBridge.isProviderAvailable(currency))
+                issues.add("store/" + entry.id + " requires unavailable UnovaCore " + currency + " provider");
+        }
+        return issues;
+    }
+
     public synchronized void add(StoreEntry entry) {
         normalizeEntry(entry);
         if (entry.id == null || entry.id.isBlank()) {
@@ -76,8 +90,8 @@ public class StoreManager {
         if (config.command == null || config.command.isBlank()) {
             config.command = "store";
         }
-        if (config.title == null || config.title.isBlank()) {
-            config.title = "Gem Store";
+        if (config.title == null || config.title.isBlank() || "Gem Store - Rank Upgrade".equals(config.title)) {
+            config.title = "Ruby Store";
         }
         if (config.rows < 1 || config.rows > 6) {
             config.rows = DEFAULT_ROWS;
@@ -103,7 +117,7 @@ public class StoreManager {
     private static boolean normalizeEntry(StoreEntry entry) {
         boolean changed = false;
         String currency = Currency.normalize(entry.currency);
-        if (!currency.equals(entry.currency)) {
+        if (!currency.isEmpty() && !currency.equals(entry.currency)) {
             entry.currency = currency;
             changed = true;
         }
@@ -177,9 +191,9 @@ public class StoreManager {
         entry.slot = slot;
         entry.displayItem = displayItem;
         entry.name = name;
-        entry.lore = List.of("Price: " + Math.round(price) + " Gems", "Upgrade to the next rank");
+        entry.lore = List.of("Price: " + Math.round(price) + " Ruby", "Upgrade to the next rank");
         entry.price = price;
-        entry.currency = Currency.GEMS;
+        entry.currency = Currency.RUBY;
         entry.requiredGroup = requiredGroup;
         entry.track = DEFAULT_TRACK;
         entry.commands = List.of();

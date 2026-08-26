@@ -5,12 +5,13 @@ import com.tai.adminshop.config.PriceWindowManager;
 import com.tai.adminshop.config.PurchaseLimitManager;
 import com.tai.adminshop.config.SettingsManager;
 import com.tai.adminshop.config.ShopManager;
+import com.tai.adminshop.config.ShopOnlyRecipeRestriction;
 import com.tai.adminshop.config.StoreManager;
-import com.tai.adminshop.economy.GemsManager;
 import com.tai.adminshop.integration.AdminShopPlaceholders;
 import com.tai.adminshop.notification.DiscordWebhookNotifier;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,6 @@ public class AdminShopMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final ShopManager SHOP_MANAGER = new ShopManager();
     public static final StoreManager STORE_MANAGER = new StoreManager();
-    public static final GemsManager GEMS_MANAGER = new GemsManager();
     public static final PriceWindowManager PRICE_WINDOW_MANAGER = new PriceWindowManager();
     public static final PurchaseLimitManager PURCHASE_LIMIT_MANAGER = new PurchaseLimitManager();
     public static final SettingsManager SETTINGS_MANAGER = new SettingsManager();
@@ -31,12 +31,15 @@ public class AdminShopMod implements ModInitializer {
     public void onInitialize() {
         SHOP_MANAGER.load();
         STORE_MANAGER.load();
-        GEMS_MANAGER.load();
         SETTINGS_MANAGER.load();
         PRICE_WINDOW_MANAGER.load();
         PURCHASE_LIMIT_MANAGER.load();
         AdminShopPlaceholders.register();
         AdminShopCommand.register();
+		ServerLifecycleEvents.SERVER_STARTED.register(ShopOnlyRecipeRestriction::apply);
+		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
+			if (success) ShopOnlyRecipeRestriction.apply(server);
+		});
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             priceWindowCheckTicks++;
             if (priceWindowCheckTicks >= PRICE_WINDOW_CHECK_INTERVAL_TICKS) {

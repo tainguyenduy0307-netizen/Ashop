@@ -1,0 +1,9 @@
+{"id":"held_items","displayName":"Held Items","title":"Held Items Page %page%/%maxPage%","icon":"cobblemon:leftovers","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:leftovers","material":"cobblemon:leftovers","category":"held_items","buyPrice":15000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":10},
+{"id":"cobblemon:choice_band","material":"cobblemon:choice_band","category":"held_items","buyPrice":22000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":11},
+{"id":"cobblemon:choice_specs","material":"cobblemon:choice_specs","category":"held_items","buyPrice":22000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":12},
+{"id":"cobblemon:choice_scarf","material":"cobblemon:choice_scarf","category":"held_items","buyPrice":22000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":13},
+{"id":"cobblemon:life_orb","material":"cobblemon:life_orb","category":"held_items","buyPrice":26000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":14},
+{"id":"cobblemon:focus_sash","material":"cobblemon:focus_sash","category":"held_items","buyPrice":30000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":15},
+{"id":"cobblemon:assault_vest","material":"cobblemon:assault_vest","category":"held_items","buyPrice":28000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":16},
+{"id":"cobblemon:heavy_duty_boots","material":"cobblemon:heavy_duty_boots","category":"held_items","buyPrice":20000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":19}]}

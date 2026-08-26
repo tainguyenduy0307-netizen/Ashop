@@ -19,6 +19,7 @@ import com.tai.adminshop.config.ShopEntry;
 import com.tai.adminshop.config.YmlDefaultCategoryGenerator;
 import com.tai.adminshop.economy.CobEcoHook;
 import com.tai.adminshop.economy.Currency;
+import com.tai.adminshop.economy.UnovaCoreEconomyBridge;
 import com.tai.adminshop.gui.ShopGui;
 import com.tai.adminshop.gui.StoreGui;
 import com.tai.adminshop.notification.DiscordWebhookNotifier;
@@ -49,11 +50,12 @@ public final class AdminShopCommand {
     private static final long REMOVE_CONFIRM_TIMEOUT_MS = 30_000L;
     private static final String SELL_ALL_PERMISSION = "adminshop.sellall";
     private static final String ECO_GIVE_PERMISSION = "adminshop.eco.give";
-    private static final String GEMS_ADMIN_PERMISSION = "ashop.gems.admin";
+    private static final String RUBY_ADMIN_PERMISSION = "ashop.ruby.admin";
+    private static final String LEGACY_GEMS_ADMIN_PERMISSION = "ashop.gems.admin";
     private static final String GTS_WEBHOOK_PERMISSION = "adminshop.gts.webhook";
     private static final String LIMIT_PERMISSION = "adminshop.limit";
     private static final String COMMAND_ITEM_PERMISSION = "adminshop.commanditem";
-    private static final List<String> CURRENCY_SUGGESTIONS = List.of("money", "gems");
+    private static final List<String> CURRENCY_SUGGESTIONS = List.of("money", "sapphire", "ruby");
     private static final List<String> PERIOD_SUGGESTIONS = List.of("EIGHT_HOURS", "DAILY", "WEEKLY", "MONTHLY");
     private static final Map<UUID, PendingRemove> PENDING_REMOVES = new HashMap<>();
 
@@ -229,27 +231,33 @@ public final class AdminShopCommand {
         dispatcher.register(CommandManager.literal("store")
                 .executes(AdminShopCommand::openStore));
 
-        dispatcher.register(CommandManager.literal("gems")
+        dispatcher.register(CommandManager.literal("ruby")
                 .executes(AdminShopCommand::gemsSelf)
                 .then(CommandManager.literal("give")
-                        .requires(AdminShopCommand::hasGemsAdminPermission)
+                        .requires(AdminShopCommand::hasRubyAdminPermission)
                         .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                 .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0))
                                         .executes(context -> gemsModify(context, "give")))))
                 .then(CommandManager.literal("take")
-                        .requires(AdminShopCommand::hasGemsAdminPermission)
+                        .requires(AdminShopCommand::hasRubyAdminPermission)
                         .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                 .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0))
                                         .executes(context -> gemsModify(context, "take")))))
                 .then(CommandManager.literal("set")
-                        .requires(AdminShopCommand::hasGemsAdminPermission)
+                        .requires(AdminShopCommand::hasRubyAdminPermission)
                         .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                 .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0))
                                         .executes(context -> gemsModify(context, "set")))))
                 .then(CommandManager.literal("balance")
-                        .requires(AdminShopCommand::hasGemsAdminPermission)
+                        .requires(AdminShopCommand::hasRubyAdminPermission)
                         .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                 .executes(AdminShopCommand::gemsBalance))));
+        dispatcher.register(CommandManager.literal("gems")
+                .executes(context -> { context.getSource().sendFeedback(() -> Text.literal("/gems is deprecated; use /ruby."), false); return gemsSelf(context); })
+                .then(CommandManager.literal("give").requires(AdminShopCommand::hasRubyAdminPermission).then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()).then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0)).executes(context -> gemsModify(context, "give")))))
+                .then(CommandManager.literal("take").requires(AdminShopCommand::hasRubyAdminPermission).then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()).then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0)).executes(context -> gemsModify(context, "take")))))
+                .then(CommandManager.literal("set").requires(AdminShopCommand::hasRubyAdminPermission).then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()).then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0)).executes(context -> gemsModify(context, "set")))))
+                .then(CommandManager.literal("balance").requires(AdminShopCommand::hasRubyAdminPermission).then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()).executes(AdminShopCommand::gemsBalance))));
 
         dispatcher.register(CommandManager.literal("sell")
                 .then(CommandManager.literal("hand")
@@ -284,7 +292,6 @@ public final class AdminShopCommand {
     private static int reload(CommandContext<ServerCommandSource> context) {
         AdminShopMod.SHOP_MANAGER.load();
         AdminShopMod.STORE_MANAGER.load();
-        AdminShopMod.GEMS_MANAGER.load();
         AdminShopMod.SETTINGS_MANAGER.reload();
         AdminShopMod.PRICE_WINDOW_MANAGER.reload();
         AdminShopMod.PURCHASE_LIMIT_MANAGER.load();
@@ -311,7 +318,8 @@ public final class AdminShopCommand {
 
     private static int validate(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        List<String> report = AdminShopMod.SHOP_MANAGER.validateCategories();
+        List<String> report = new java.util.ArrayList<>(AdminShopMod.SHOP_MANAGER.validateCategories());
+        report.addAll(AdminShopMod.STORE_MANAGER.validateEconomy());
         if (report.isEmpty()) {
             source.sendFeedback(() -> Text.literal("AdminShop validation passed."), true);
             AdminShopMod.LOGGER.info("[AdminShop] Category validation passed.");
@@ -973,8 +981,9 @@ public final class AdminShopCommand {
 
     private static int gemsSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-        double balance = AdminShopMod.GEMS_MANAGER.balance(player.getUuid());
-        player.sendMessage(Text.literal("Gems: " + PriceFormatter.integer(balance)), false);
+        var balance = UnovaCoreEconomyBridge.balance(player.getUuid(), Currency.RUBY);
+        if (balance.isEmpty()) { player.sendMessage(Text.literal("Ruby provider is unavailable."), false); return 0; }
+        player.sendMessage(Text.literal("Ruby: " + PriceFormatter.integer(balance.getAsLong())), false);
         return 1;
     }
 
@@ -988,8 +997,9 @@ public final class AdminShopCommand {
                 source.sendError(Text.literal("Unknown player UUID for " + profile.getName()));
                 continue;
             }
-            double balance = AdminShopMod.GEMS_MANAGER.balance(uuid);
-            source.sendFeedback(() -> Text.literal(profile.getName() + " Gems: " + PriceFormatter.integer(balance)), false);
+            var balance = UnovaCoreEconomyBridge.balance(uuid, Currency.RUBY);
+            if (balance.isEmpty()) { source.sendError(Text.literal("Ruby provider is unavailable for " + profile.getName())); continue; }
+            source.sendFeedback(() -> Text.literal(profile.getName() + " Ruby: " + PriceFormatter.integer(balance.getAsLong())), false);
             count++;
         }
         return count;
@@ -998,7 +1008,9 @@ public final class AdminShopCommand {
     private static int gemsModify(CommandContext<ServerCommandSource> context, String action) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
-        double amount = DoubleArgumentType.getDouble(context, "amount");
+        double rawAmount = DoubleArgumentType.getDouble(context, "amount");
+        if (!Double.isFinite(rawAmount) || rawAmount != Math.rint(rawAmount) || rawAmount > Long.MAX_VALUE) { source.sendError(Text.literal("Ruby amount must be a whole non-negative integer.")); return 0; }
+        long amount = (long) rawAmount;
         int changed = 0;
 
         for (GameProfile profile : profiles) {
@@ -1009,22 +1021,23 @@ public final class AdminShopCommand {
             }
 
             boolean ok = switch (action) {
-                case "give" -> AdminShopMod.GEMS_MANAGER.give(uuid, amount);
-                case "take" -> AdminShopMod.GEMS_MANAGER.take(uuid, amount);
-                case "set" -> AdminShopMod.GEMS_MANAGER.set(uuid, amount);
+                case "give" -> amount > 0 && UnovaCoreEconomyBridge.deposit(uuid, Currency.RUBY, amount);
+                case "take" -> amount > 0 && UnovaCoreEconomyBridge.withdraw(uuid, Currency.RUBY, amount);
+                case "set" -> UnovaCoreEconomyBridge.setRuby(uuid, amount);
                 default -> false;
             };
             if (!ok) {
-                source.sendError(Text.literal("Could not " + action + " gems for " + profile.getName()));
+                source.sendError(Text.literal("Could not " + action + " Ruby for " + profile.getName()));
                 continue;
             }
 
-            double balance = AdminShopMod.GEMS_MANAGER.balance(uuid);
-            source.sendFeedback(() -> Text.literal(action + " " + PriceFormatter.integer(amount) + " Gems for "
-                    + profile.getName() + ". Balance: " + PriceFormatter.integer(balance)), true);
+            var balance = UnovaCoreEconomyBridge.balance(uuid, Currency.RUBY);
+            long current = balance.orElse(-1L);
+            source.sendFeedback(() -> Text.literal(action + " " + PriceFormatter.integer(amount) + " Ruby for "
+                    + profile.getName() + ". Balance: " + PriceFormatter.integer(current)), true);
             ServerPlayerEntity onlinePlayer = source.getServer().getPlayerManager().getPlayer(uuid);
             if (onlinePlayer != null) {
-                onlinePlayer.sendMessage(Text.literal("Your Gems balance is now " + PriceFormatter.integer(balance)), false);
+                onlinePlayer.sendMessage(Text.literal("Your Ruby balance is now " + PriceFormatter.integer(current)), false);
             }
             changed++;
         }
@@ -1101,7 +1114,7 @@ public final class AdminShopCommand {
     }
 
     private static List<String> addHandTicketThirdArgSuggestions() {
-        return List.of("money", "gems", "EIGHT_HOURS", "DAILY", "WEEKLY", "MONTHLY");
+        return List.of("money", "sapphire", "ruby", "EIGHT_HOURS", "DAILY", "WEEKLY", "MONTHLY");
     }
 
     private static String vietnameseLimitLabel(int limit, PurchaseLimitPeriod period) {
@@ -1126,8 +1139,8 @@ public final class AdminShopCommand {
         return hasPermission(source, GTS_WEBHOOK_PERMISSION);
     }
 
-    private static boolean hasGemsAdminPermission(ServerCommandSource source) {
-        return hasPermission(source, GEMS_ADMIN_PERMISSION);
+    private static boolean hasRubyAdminPermission(ServerCommandSource source) {
+        return hasPermission(source, RUBY_ADMIN_PERMISSION) || hasPermission(source, LEGACY_GEMS_ADMIN_PERMISSION);
     }
 
     private static boolean hasCommandItemPermission(ServerCommandSource source) {

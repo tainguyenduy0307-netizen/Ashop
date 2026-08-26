@@ -1,0 +1,5 @@
+{"id":"berries","displayName":"Berries","title":"Berries Page %page%/%maxPage%","icon":"cobblemon:oran_berry","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:oran_berry","material":"cobblemon:oran_berry","category":"berries","buyPrice":300,"sellPrice":60,"currency":"money","slot":10},
+{"id":"cobblemon:sitrus_berry","material":"cobblemon:sitrus_berry","category":"berries","buyPrice":700,"sellPrice":140,"currency":"money","slot":11},
+{"id":"cobblemon:lum_berry","material":"cobblemon:lum_berry","category":"berries","buyPrice":1000,"sellPrice":200,"currency":"money","slot":12},
+{"id":"cobblemon:leppa_berry","material":"cobblemon:leppa_berry","category":"berries","buyPrice":800,"sellPrice":160,"currency":"money","slot":13}]}

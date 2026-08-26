@@ -1,0 +1,9 @@
+{"id":"evolution_items","displayName":"Evolution Items","title":"Evolution Items Page %page%/%maxPage%","icon":"cobblemon:fire_stone","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:fire_stone","material":"cobblemon:fire_stone","category":"evolution_items","buyPrice":8000,"sellPrice":0,"currency":"money","slot":10},
+{"id":"cobblemon:water_stone","material":"cobblemon:water_stone","category":"evolution_items","buyPrice":8000,"sellPrice":0,"currency":"money","slot":11},
+{"id":"cobblemon:thunder_stone","material":"cobblemon:thunder_stone","category":"evolution_items","buyPrice":8000,"sellPrice":0,"currency":"money","slot":12},
+{"id":"cobblemon:leaf_stone","material":"cobblemon:leaf_stone","category":"evolution_items","buyPrice":8000,"sellPrice":0,"currency":"money","slot":13},
+{"id":"cobblemon:moon_stone","material":"cobblemon:moon_stone","category":"evolution_items","buyPrice":12000,"sellPrice":0,"currency":"money","slot":14},
+{"id":"cobblemon:sun_stone","material":"cobblemon:sun_stone","category":"evolution_items","buyPrice":12000,"sellPrice":0,"currency":"money","slot":15},
+{"id":"cobblemon:metal_coat","material":"cobblemon:metal_coat","category":"evolution_items","buyPrice":18000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":16},
+{"id":"cobblemon:reaper_cloth","material":"cobblemon:reaper_cloth","category":"evolution_items","buyPrice":18000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":19}]}

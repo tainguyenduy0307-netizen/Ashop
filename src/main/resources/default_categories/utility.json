@@ -1,0 +1,2 @@
+{"id":"utility","displayName":"Utility","title":"Utility Page %page%/%maxPage%","icon":"cobblemon:exp_share","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:exp_share","material":"cobblemon:exp_share","category":"utility","buyPrice":40000,"sellPrice":0,"currency":"money","shopOnly":true,"slot":10}]}

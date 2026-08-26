@@ -12,6 +12,14 @@ repositories {
 		url "https://maven.nucleoid.xyz/"
 		name "Nucleoid"
 	}
+	maven {
+		name "ImpactDev"
+		url "https://maven.impactdev.net/repository/development/"
+	}
+	maven {
+		name "Modrinth"
+		url "https://api.modrinth.com/maven"
+	}
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -39,10 +47,18 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	modCompileOnly "com.cobblemon:fabric:1.7.3+1.21.1"
+	testRuntimeOnly "com.cobblemon:fabric:1.7.3+1.21.1"
 	modImplementation include("eu.pb4:placeholder-api:2.4.2+1.21")
 	compileOnly "net.luckperms:api:5.5"
 	implementation include("org.yaml:snakeyaml:2.2")
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.3"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 	
+}
+
+tasks.withType(Test).configureEach {
+	useJUnitPlatform()
 }
 
 processResources {

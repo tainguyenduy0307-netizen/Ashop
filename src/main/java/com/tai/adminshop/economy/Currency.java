@@ -1,32 +1,33 @@
 package com.tai.adminshop.economy;
 
-import com.tai.adminshop.AdminShopMod;
 import com.tai.adminshop.config.ShopEntry;
 import com.tai.adminshop.util.PriceFormatter;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.Locale;
 
 public final class Currency {
-    public static final String DOLLARS = "dollars";
-    public static final String GEMS = "gems";
+    public static final String MONEY = "money";
+    public static final String SAPPHIRE = "sapphire";
+    public static final String RUBY = "ruby";
+    /** @deprecated use MONEY. */ public static final String DOLLARS = MONEY;
 
     private Currency() {
     }
 
     public static String normalize(String currency) {
         if (currency == null || currency.isBlank()) {
-            return DOLLARS;
+            return MONEY;
         }
         String normalized = currency.trim().toLowerCase(Locale.ROOT);
         if ("money".equals(normalized) || "dollar".equals(normalized) || "cobbledollars".equals(normalized)
                 || "pokedollars".equals(normalized)) {
-            return DOLLARS;
+            return MONEY;
         }
-        if (GEMS.equals(normalized) || "gem".equals(normalized)) {
-            return GEMS;
+        if ("sapphire".equals(normalized) || "sapphires".equals(normalized) || "pco".equals(normalized)) {
+            return SAPPHIRE;
         }
-        return DOLLARS;
+        if (RUBY.equals(normalized) || "gems".equals(normalized) || "gem".equals(normalized)) return RUBY;
+        return "";
     }
 
     public static String of(ShopEntry entry) {
@@ -35,35 +36,16 @@ public final class Currency {
         return normalized;
     }
 
-    public static boolean isGems(String currency) {
-        return GEMS.equals(normalize(currency));
-    }
-
-    public static boolean has(ServerPlayerEntity player, String currency, double amount) {
-        if (isGems(currency)) {
-            return AdminShopMod.GEMS_MANAGER.has(player.getUuid(), amount);
-        }
-        return CobEcoHook.hasMoney(player.getUuid(), amount);
-    }
-
-    public static boolean take(ServerPlayerEntity player, String currency, double amount) {
-        if (isGems(currency)) {
-            return AdminShopMod.GEMS_MANAGER.take(player.getUuid(), amount);
-        }
-        return CobEcoHook.takeMoney(player.getUuid(), amount);
-    }
-
-    public static boolean give(ServerPlayerEntity player, String currency, double amount) {
-        if (isGems(currency)) {
-            return AdminShopMod.GEMS_MANAGER.give(player.getUuid(), amount);
-        }
-        return CobEcoHook.giveMoney(player.getUuid(), amount);
+    public static boolean isRuby(String currency) {
+        return RUBY.equals(normalize(currency));
     }
 
     public static String format(String currency, double amount) {
-        if (isGems(currency)) {
-            return PriceFormatter.integer(amount) + " Gems";
-        }
-        return PriceFormatter.money(amount) + " PokeDollars";
+        return switch (normalize(currency)) {
+            case SAPPHIRE -> PriceFormatter.integer(amount) + " Sapphire";
+            case RUBY -> PriceFormatter.integer(amount) + " Ruby";
+            case MONEY -> PriceFormatter.money(amount) + " PokeDollars";
+            default -> "Invalid currency";
+        };
     }
 }

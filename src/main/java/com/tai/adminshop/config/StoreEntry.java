@@ -10,7 +10,7 @@ public class StoreEntry {
     public String name;
     public List<String> lore = new ArrayList<>();
     public double price;
-    public String currency = "gems";
+    public String currency = "ruby";
     public String requiredGroup;
     public String track = "ranks";
     public List<String> commands = new ArrayList<>();

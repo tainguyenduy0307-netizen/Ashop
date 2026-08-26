@@ -1,0 +1,5 @@
+{"id":"battle_items","displayName":"Battle Items","title":"Battle Items Page %page%/%maxPage%","icon":"cobblemon:x_attack","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:x_attack","material":"cobblemon:x_attack","category":"battle_items","buyPrice":1200,"sellPrice":240,"currency":"money","slot":10},
+{"id":"cobblemon:x_defense","material":"cobblemon:x_defense","category":"battle_items","buyPrice":1200,"sellPrice":240,"currency":"money","slot":11},
+{"id":"cobblemon:dire_hit","material":"cobblemon:dire_hit","category":"battle_items","buyPrice":1600,"sellPrice":320,"currency":"money","slot":12},
+{"id":"cobblemon:guard_spec","material":"cobblemon:guard_spec","category":"battle_items","buyPrice":1600,"sellPrice":320,"currency":"money","slot":13}]}

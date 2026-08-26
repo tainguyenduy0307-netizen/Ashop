@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.tai.adminshop.AdminShopMod;
 import com.tai.adminshop.economy.Currency;
+import com.tai.adminshop.economy.UnovaCoreEconomyBridge;
 import com.tai.adminshop.util.ItemStackSerializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.item.ItemStack;
@@ -35,7 +36,8 @@ public class ShopManager {
     private static final DateTimeFormatter BACKUP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
     private static final String[] DEFAULT_CATEGORY_FILES = {
             "blocks", "ores", "foods", "farming", "redstone", "decoration", "workstations",
-            "enchanting", "dyes", "music", "potions", "mobs", "tools", "combat", "misc", "tickets"
+            "enchanting", "dyes", "music", "potions", "mobs", "tools", "combat", "misc", "tickets",
+			"pokeballs", "medicine", "battle_items", "held_items", "evolution_items", "berries", "utility", "boosters"
     };
     public static final Set<String> ALLOWED_CATEGORY_IDS = Set.of(DEFAULT_CATEGORY_FILES);
     public static final int[] ALLOWED_ITEM_SLOT_ORDER = {
@@ -92,7 +94,7 @@ public class ShopManager {
                     changed = true;
                 }
                 String currency = Currency.normalize(entry.currency);
-                if (!currency.equals(entry.currency)) {
+                if (!currency.isEmpty() && !currency.equals(entry.currency)) {
                     entry.currency = currency;
                     changed = true;
                 }
@@ -121,7 +123,9 @@ public class ShopManager {
 
     public synchronized void addOrReplace(ShopEntry entry) {
         entry.category = ShopEntry.normalizeCategory(entry.category);
-        entry.currency = Currency.normalize(entry.currency);
+        String normalizedCurrency = Currency.normalize(entry.currency);
+        if (normalizedCurrency.isEmpty()) throw new IllegalArgumentException("Unsupported currency: " + entry.currency);
+        entry.currency = normalizedCurrency;
         CategoryShopConfig categoryConfig = getOrCreateCategoryConfig(entry.category);
         ShopEntry previous = null;
         for (ShopEntry item : categoryConfig.items) {
@@ -494,6 +498,7 @@ public class ShopManager {
             case "redstone" -> "minecraft:redstone";
             case "decoration" -> "minecraft:flower_pot";
             case "workstations" -> "minecraft:crafting_table";
+			case "boosters" -> "minecraft:clock";
             case "enchanting" -> "minecraft:enchanting_table";
             case "dyes" -> "minecraft:red_dye";
             case "music" -> "minecraft:music_disc_cat";
@@ -503,12 +508,20 @@ public class ShopManager {
             case "combat" -> "minecraft:iron_sword";
             case "misc" -> "minecraft:barrel";
             case "tickets" -> "minecraft:tripwire_hook";
+            case "pokeballs" -> "cobblemon:poke_ball";
+            case "medicine" -> "cobblemon:potion";
+            case "battle_items" -> "cobblemon:x_attack";
+            case "held_items" -> "cobblemon:leftovers";
+            case "evolution_items" -> "cobblemon:fire_stone";
+            case "berries" -> "cobblemon:oran_berry";
+            case "utility" -> "cobblemon:exp_share";
             default -> "minecraft:barrel";
         };
     }
 
     public synchronized List<String> validateCategories() {
         List<String> report = new ArrayList<>();
+        Set<String> seenEntries = new HashSet<>();
         for (CategoryShopConfig categoryConfig : categoryConfigs.values()) {
             String id = ShopEntry.normalizeCategory(categoryConfig.id);
             if (!ALLOWED_CATEGORY_IDS.contains(id)) {
@@ -527,6 +540,28 @@ public class ShopManager {
 
             Set<Integer> pages = new HashSet<>();
             for (ShopEntry entry : categoryConfig.items == null ? List.<ShopEntry>of() : categoryConfig.items) {
+				String entryId = entry.id == null ? "" : entry.id.trim().toLowerCase(java.util.Locale.ROOT);
+				if (entryId.isBlank()) report.add(id + " has an item with no entry id");
+				else if (!seenEntries.add(entryId)) report.add("Duplicate shop entry id: " + entryId);
+				if (!validItemId(entry.material)) report.add(id + "/" + entry.id + " has missing item registry id: " + entry.material);
+				if (entry.material != null && (entry.material.startsWith("unova:") && entry.material.endsWith("_relic"))) report.add(id + "/" + entry.id + " lists a bound relic");
+				if (entry.material != null && (entry.material.contains("debug") || entry.material.contains("test"))) report.add(id + "/" + entry.id + " lists a dev/debug item");
+                String currency = Currency.normalize(entry.currency);
+                if (currency.isEmpty()) report.add(id + "/" + entry.id + " has unknown currency: " + entry.currency);
+                else {
+                    if (!Double.isFinite(entry.buyPrice) || entry.buyPrice < 0 || !Double.isFinite(entry.sellPrice) || entry.sellPrice < 0)
+                        report.add(id + "/" + entry.id + " has invalid price");
+                    if (!Currency.MONEY.equals(currency) && (entry.buyPrice != Math.rint(entry.buyPrice) || entry.sellPrice != Math.rint(entry.sellPrice)))
+                        report.add(id + "/" + entry.id + " has fractional " + currency + " price");
+                    if (Currency.RUBY.equals(currency) && entry.sellPrice > 0)
+                        report.add(id + "/" + entry.id + " attempts prohibited Ruby sell price");
+					if (entry.buyPrice > 0 && entry.sellPrice >= entry.buyPrice)
+						report.add(id + "/" + entry.id + " has sell >= buy arbitrage");
+                    if ((Currency.SAPPHIRE.equals(currency) || Currency.RUBY.equals(currency)) && !UnovaCoreEconomyBridge.isProviderAvailable(currency))
+                        report.add(id + "/" + entry.id + " requires unavailable UnovaCore " + currency + " provider");
+                }
+				if (entry.shopOnly && entry.sellPrice > 0) report.add(id + "/" + entry.id + " shop-only item must be buy-only");
+				if (entry.shopOnly && entry.dynamicPricing) report.add(id + "/" + entry.id + " shop-only item must use fixed pricing");
                 if (entry.page <= 0) {
                     report.add(id + "/" + entry.id + " has invalid page " + entry.page);
                 } else {

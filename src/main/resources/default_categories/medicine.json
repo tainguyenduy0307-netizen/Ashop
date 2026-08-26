@@ -1,0 +1,9 @@
+{"id":"medicine","displayName":"Medicine","title":"Medicine Page %page%/%maxPage%","icon":"cobblemon:potion","fillItem":"minecraft:gray_stained_glass_pane","buttons":{"previousPage":45,"back":49,"nextPage":53},"items":[
+{"id":"cobblemon:potion","material":"cobblemon:potion","category":"medicine","buyPrice":400,"sellPrice":80,"currency":"money","slot":10},
+{"id":"cobblemon:super_potion","material":"cobblemon:super_potion","category":"medicine","buyPrice":900,"sellPrice":180,"currency":"money","slot":11},
+{"id":"cobblemon:hyper_potion","material":"cobblemon:hyper_potion","category":"medicine","buyPrice":1800,"sellPrice":360,"currency":"money","slot":12},
+{"id":"cobblemon:max_potion","material":"cobblemon:max_potion","category":"medicine","buyPrice":3600,"sellPrice":720,"currency":"money","slot":13},
+{"id":"cobblemon:full_restore","material":"cobblemon:full_restore","category":"medicine","buyPrice":6000,"sellPrice":1200,"currency":"money","slot":14},
+{"id":"cobblemon:revive","material":"cobblemon:revive","category":"medicine","buyPrice":5000,"sellPrice":0,"currency":"money","slot":15},
+{"id":"cobblemon:full_heal","material":"cobblemon:full_heal","category":"medicine","buyPrice":1200,"sellPrice":240,"currency":"money","slot":16},
+{"id":"cobblemon:ether","material":"cobblemon:ether","category":"medicine","buyPrice":3200,"sellPrice":0,"currency":"money","slot":19}]}

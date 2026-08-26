@@ -5,8 +5,10 @@ import com.mojang.brigadier.ParseResults;
 import com.tai.adminshop.config.ShopEntry;
 import com.tai.adminshop.config.PurchaseLimitManager;
 import com.tai.adminshop.economy.Currency;
+import com.tai.adminshop.economy.PaymentPolicy;
 import com.tai.adminshop.log.TransactionLogger;
 import com.tai.adminshop.util.ItemStackSerializer;
+import com.tai.adminshop.integration.UnovaCoreBoosterBridge;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.RegistryWrapper;
@@ -48,32 +50,37 @@ public final class ShopService {
             }
 
             boolean commandReward = entry.isCommandReward();
-            double price = multiplyPrice(effectiveBuyPrice(entry), amount);
-            if (!commandReward && !canInsertAmount(player.getInventory(), item, amount)) {
+			boolean boosterReward = entry.isBoosterReward();
+			double unitPrice = boosterReward ? UnovaCoreBoosterBridge.priceSapphire(entry.boosterId).orElse(-1) : effectiveBuyPrice(entry);
+			if (boosterReward && (unitPrice < 0 || !UnovaCoreBoosterBridge.available())) { player.sendMessage(Text.literal("Booster runtime is unavailable"), false); return false; }
+            double price = multiplyPrice(unitPrice, amount);
+			if (!commandReward && !boosterReward && !canInsertAmount(player.getInventory(), item, amount)) {
                 player.sendMessage(Text.literal("Your inventory is full"), false);
                 return false;
             }
 
             String currency = Currency.of(entry);
-            if (!Currency.has(player, currency, price)) {
-                player.sendMessage(Text.literal("Not enough " + currency), false);
+            PaymentPolicy.Result payment = PaymentPolicy.charge(player, currency, price, entry.paymentMode);
+            if (!payment.successful()) {
+                player.sendMessage(Text.literal(payment.message()), false);
                 return false;
             }
 
-            if (!Currency.take(player, currency, price)) {
-                player.sendMessage(Text.literal("Could not take " + currency), false);
-                return false;
-            }
-
-            if (commandReward) {
+            if (boosterReward) {
+				if (!UnovaCoreBoosterBridge.activate(player, entry.boosterId, amount)) {
+					PaymentPolicy.refund(player, payment.receipt());
+					player.sendMessage(Text.literal("Booster activation failed. Sapphire was refunded."), false);
+					return false;
+				}
+			} else if (commandReward) {
                 if (!runRewardCommand(player, entry, amount)) {
-                    Currency.give(player, currency, price);
+                    PaymentPolicy.refund(player, payment.receipt());
                     player.sendMessage(Text.literal("Reward command failed. Payment was refunded."), false);
                     return false;
                 }
             } else {
                 if (!insertAmount(player.getInventory(), item, amount)) {
-                    Currency.give(player, currency, price);
+                    PaymentPolicy.refund(player, payment.receipt());
                     player.sendMessage(Text.literal("Your inventory is full"), false);
                     return false;
                 }
@@ -132,6 +139,10 @@ public final class ShopService {
     }
 
     public static boolean sell(ServerPlayerEntity player, ShopEntry entry, int amount) {
+        if (Currency.isRuby(entry.currency)) {
+            player.sendMessage(Text.literal("Ruby-priced items cannot be sold."), false);
+            return false;
+        }
         if (effectiveSellPrice(entry) <= 0) {
             player.sendMessage(Text.literal("This item cannot be sold"), false);
             return false;
@@ -156,13 +167,19 @@ public final class ShopService {
             }
 
             double price = multiplyPrice(effectiveSellPrice(entry), sellAmount);
+            String currency = Currency.of(entry);
+            if (!PaymentPolicy.canReceiveSellPayout(player, currency, price)) {
+                player.sendMessage(Text.literal("This sell payout is unavailable."), false);
+                return false;
+            }
+            List<ItemStack> beforeRemoval = copyMainInventory(player.getInventory());
             if (!removeMatching(player.getInventory(), template, sellAmount)) {
                 player.sendMessage(Text.literal("Could not remove item"), false);
                 return false;
             }
 
-            String currency = Currency.of(entry);
-            if (!Currency.give(player, currency, price)) {
+            if (!PaymentPolicy.giveSellPayout(player, currency, price)) {
+                restoreMainInventory(player.getInventory(), beforeRemoval);
                 player.sendMessage(Text.literal("Could not give " + currency), false);
                 return false;
             }
@@ -186,6 +203,7 @@ public final class ShopService {
         }
 
         for (ShopEntry entry : AdminShopMod.SHOP_MANAGER.all()) {
+            if (Currency.isRuby(entry.currency)) continue;
             if (effectiveSellPrice(entry) <= 0) {
                 continue;
             }
@@ -250,10 +268,18 @@ public final class ShopService {
         int totalItems = 0;
         for (SellPlan plan : plans.values()) {
             String currency = Currency.of(plan.entry);
+            if (Currency.isRuby(currency)) continue;
             totalsByCurrency.merge(currency, multiplyPrice(effectiveSellPrice(plan.entry), plan.amount), Double::sum);
             totalItems += plan.amount;
         }
 
+        for (Map.Entry<String, Double> total : totalsByCurrency.entrySet()) {
+            if (!PaymentPolicy.canReceiveSellPayout(player, total.getKey(), total.getValue())) {
+                player.sendMessage(Text.literal("A sell payout is unavailable."), false);
+                return false;
+            }
+        }
+        List<ItemStack> beforeRemoval = copyMainInventory(inventory);
         for (SellPlan plan : plans.values()) {
             int remaining = plan.amount;
             for (SlotRemoval removal : plan.removals) {
@@ -266,17 +292,22 @@ public final class ShopService {
                 }
             }
             if (remaining > 0) {
+                restoreMainInventory(inventory, beforeRemoval);
                 player.sendMessage(Text.literal("Could not remove all sellable items"), false);
                 return false;
             }
         }
         inventory.markDirty();
 
+        List<Map.Entry<String, Double>> paid = new ArrayList<>();
         for (Map.Entry<String, Double> total : totalsByCurrency.entrySet()) {
-            if (!Currency.give(player, total.getKey(), total.getValue())) {
+            if (!PaymentPolicy.giveSellPayout(player, total.getKey(), total.getValue())) {
+                for (Map.Entry<String, Double> prior : paid) PaymentPolicy.reverseSellPayout(player, prior.getKey(), prior.getValue());
+                restoreMainInventory(inventory, beforeRemoval);
                 player.sendMessage(Text.literal("Could not give " + total.getKey()), false);
                 return false;
             }
+            paid.add(total);
         }
 
         double totalLogged = totalsByCurrency.values().stream().mapToDouble(Double::doubleValue).sum();
@@ -315,6 +346,7 @@ public final class ShopService {
     }
 
     public static double effectiveSellPrice(ShopEntry entry) {
+        if (Currency.isRuby(entry.currency)) return 0.0D;
         return AdminShopMod.PRICE_WINDOW_MANAGER.effectiveSellPrice(entry);
     }
 
@@ -380,6 +412,17 @@ public final class ShopService {
             }
         }
         return false;
+    }
+
+    private static List<ItemStack> copyMainInventory(PlayerInventory inventory) {
+        List<ItemStack> copy = new ArrayList<>(inventory.main.size());
+        for (ItemStack stack : inventory.main) copy.add(stack.copy());
+        return copy;
+    }
+
+    private static void restoreMainInventory(PlayerInventory inventory, List<ItemStack> snapshot) {
+        for (int slot = 0; slot < snapshot.size() && slot < inventory.main.size(); slot++) inventory.main.set(slot, snapshot.get(slot).copy());
+        inventory.markDirty();
     }
 
     private static final class SellPlan {
